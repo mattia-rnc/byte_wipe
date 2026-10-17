@@ -1,0 +1,9 @@
+# object files
+*.o
+
+# executables files
+*.exe
+bytewipe
+
+# other files
+.vscode/
