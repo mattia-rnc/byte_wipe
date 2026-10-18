@@ -1,35 +1,46 @@
-# compiler to use
+# Compiler to use
 CC = gcc 
 
-# compiler flags:
+# Compiler flags:
 # -Wall: enable standard warnings
 # -Wextra: enable additional warnings
 # -std=c99: use the C99 standard
 # -O2: optimize for execution speed
 CFLAGS = -Wall -Wextra -std=c99 -O2 
 
-# target executable name and source directory
+# Target executable name and source directory
 TARGET = bytewipe
 SRC_DIR = src
 
-# source and object files
-SRCS = $(SRC_DIR)/main.c
+# Source and object files
+SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/bytewipe.c $(SRC_DIR)/random_gen.c
 OBJS = $(SRCS:.c=.o)
 
-# default rule: compile the whole project
+# OS-specific settings:
+# LDFLAGS = -lbcrypt: needed for random generation
+# CLEAN_CMD: custom command for file removal 
+ifeq ($(OS),Windows_NT)
+	LDFLAGS = -lbcrypt
+	CLEAN_CMD = del /q /f src\*.o $(TARGET).exe
+else
+	LDFLAGS =
+	CLEAN_CMD = rm -f $(OBJS) $(TARGET)
+endif
+
+# Default rule: compile the whole project
 all: $(TARGET)
 
-# link object files to create the executable
+# Link object files to create the executable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
-# compile .c source files into .o object files
+# Compile .c source files into .o object files
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# clean generated files (objects and executable)
+# Clean generated files (objects and executable)
 clean:
-	rm -f $(SRC_DIR)/*.o $(TARGET)
+	$(CLEAN_CMD)
 
-# prevent conflicts with files named "all" or "clean"
+# Prevent conflicts with files named "all" or "clean"
 .PHONY: all clean
