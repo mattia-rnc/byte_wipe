@@ -5,9 +5,10 @@
  * @brief Custom structure used to store file infos while being OS-independant
  */
 typedef struct {
-    long long size; // Used to store the size of the file in bytes
-    int is_regular; // Flag set to 1 if the path points to a regular file, 0 otherwise
-    int is_directory; // Flag set to 1 if the path points to a directory, 0 otherwise.
+    long long size;         // Used to store the size of the file in bytes
+    int is_regular;         // Flag set to 1 if the path points to a regular file (safe to wipe), 0 otherwise
+    int is_readonly;        // Flag set to 1 if the user lacks write permissions, 0 otherwise
+    unsigned int hardlinks; // Number of hard links pointing to the same data block
 } FileInfo;
 
 /**

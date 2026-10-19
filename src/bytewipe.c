@@ -34,7 +34,7 @@ static void generateRandomFilename(char *str, size_t size) {
 }
 
 
-int wipeFile(const char *filepath, int passes, WipeMode mode) {
+int wipeFile(const char *filepath, size_t buffer_size, int passes, WipeMode mode, int force){
 
     //PIPELINE:
     // 1. Get exact file size using stat()
@@ -48,10 +48,22 @@ int wipeFile(const char *filepath, int passes, WipeMode mode) {
     FileInfo info; // Custom structure for file infos
 
     if(getFileInfo(filepath, &info) != 0){
+        fprintf(stderr, "Error: File not found at path: %s. \n", filepath);
         return ERR_FILE_NOT_FOUND;
     }
 
-    if(!info.is_regular) {
+    if(!info.is_regular){
+        fprintf(stderr, "Error: Target is not a regular file. \n");
+        return ERR_INVALID_ARGS;
+    }
+
+    if(info.is_readonly && !force){
+        fprintf(stderr, "Error: File is read-only. Use --force to attempt a permission change. \n");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    if(info.hardlinks > 1 && !force){
+        fprintf(stderr, "Error: File has %u hardlinks. Use --force to bypass this security block. \n", info.hardlinks);
         return ERR_INVALID_ARGS;
     }
 

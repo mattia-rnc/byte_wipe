@@ -34,6 +34,6 @@ typedef enum {
  * @param mode Overwrite mode: WIPE_MODE_RANDOM (default) or WIPE_MODE_ZERO
  * @return int BYTEWIPE_SUCCESS (0) on success, or a negative error code on failure.
  */
-int wipeFile(const char *filepath, int passes, WipeMode mode);
+int wipeFile(const char *filepath, size_t buffer_size, int passes, WipeMode mode, int force);
 
 #endif
