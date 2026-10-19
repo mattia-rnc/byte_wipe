@@ -86,5 +86,5 @@ int main(int argc, char *argv[]){
     }
 
 
-    // Call wipeFile(target_file, passes, mode);
+    wipeFile(target_file, passes, mode);
 }

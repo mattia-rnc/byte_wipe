@@ -11,6 +11,7 @@
 
 #include "bytewipe.h"
 #include "random_gen.h"
+#include "sys_utils.h"
 
 #define BUFFER_SIZE 4096
 
@@ -32,11 +33,8 @@ static void generateRandomFilename(char *str, size_t size) {
     str[size-1] = '\0';
 }
 
-int wipeFile(const char *filepath, int passes, WipeMode mode) {
 
-    // REQUIRED CHECKS (done in main):
-    // - passes: min 1, deafult 1
-    // - mode: default random
+int wipeFile(const char *filepath, int passes, WipeMode mode) {
 
     //PIPELINE:
     // 1. Get exact file size using stat()
@@ -46,4 +44,26 @@ int wipeFile(const char *filepath, int passes, WipeMode mode) {
     // 5. File rename
     // 6. File removal
 
+
+    FileInfo info; // Custom structure for file infos
+
+    if(getFileInfo(filepath, &info) != 0){
+        return ERR_FILE_NOT_FOUND;
+    }
+
+    if(!info.is_regular) {
+        return ERR_INVALID_ARGS;
+    }
+
+    long long total_bytes = info.size; // Used to store file size in bytes
+
+    FILE *fp = fopen(filepath, "rb+"); // File is opened in read and write binary mode
+    if(!fp){
+        return ERR_OPEN_FAILED;
+    }
+
+    // overwrite logic
+
+    fclose(fp);
+    return BYTEWIPE_SUCCESS;
 }
