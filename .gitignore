@@ -8,3 +8,4 @@ bytewipe
 # other files
 .vscode/
 private/
+test_suite.sh

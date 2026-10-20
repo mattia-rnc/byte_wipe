@@ -40,6 +40,28 @@ int getFileInfo(const char *filepath, FileInfo *info) {
 }
 
 
+int makeFileWritable(const char *filepath) {
+    if(!filepath) {
+        return -1;
+    }
+
+// On Windows, uses _chmod from <io.h> to grant both read and write permissions
+#ifdef _WIN32    
+    return (_chmod(filepath, _S_IREAD | _S_IWRITE) == 0) ? 0 : -1;
+#else
+    struct stat st;
+    
+    // Retrieve current file permissions, using lstat avoids following symlinks
+    if(lstat(filepath, &st) != 0) {
+        return -1;
+    }
+    
+    // Add user write permission (S_IWUSR) to the existing mode flags
+    return (chmod(filepath, st.st_mode | S_IWUSR) == 0) ? 0 : -1;
+#endif
+}
+
+
 int syncFileToDisk(FILE *fp) {
 
     if(!fp) {

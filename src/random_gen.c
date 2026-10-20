@@ -6,10 +6,9 @@
 #include "random_gen.h"
 #include <stddef.h> // Includes size_t, needed for byte dimension type and to prevent overflows, and NULL
 
-// Conditional inclusion of the proper libraries for the current OS
 #ifdef _WIN32 
-#include <windows.h> /* Needed for basic Windows API and functionalities */
-#include <bcrypt.h> /* Needed for safe random generation */
+#include <windows.h> // Needed for basic Windows API and functionalities
+#include <bcrypt.h> // Needed for safe random generation
 #else
 #include <stdio.h>
 #endif

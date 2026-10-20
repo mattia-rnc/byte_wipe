@@ -51,8 +51,8 @@ int main(int argc, char *argv[]){
                 passes = atoi(argv[i + 1]); // String to integer convertion of the number
                 
                 // Passes must be >= 1
-                if(passes <= 0) {
-                    fprintf(stderr, "Error: Number of passes must be greater than zero. \n");
+                if(passes < MIN_PASSES || passes > MAX_PASSES) {
+                    fprintf(stderr, "Error: Number of passes must be between %d and %d.\n", MIN_PASSES, MAX_PASSES); 
                     return EXIT_FAILURE;
                 }
 
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]){
             force = 1;
 
         // If argument in -b or --buffer
-        if(strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--buffer") == 0){
+        } else if(strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--buffer") == 0){
             
             // Skip buffer size setting if --legacy flag was already parsed
             if(legacy){
@@ -99,12 +99,13 @@ int main(int argc, char *argv[]){
 
         // If argument is --legacy set the proper buffer size
         } else if(strcmp(argv[i], "--legacy") == 0 ){
+            legacy = 1;            
             buffer_size = LEGACY_BUF_SIZE;
         
         // If argument is -h or --help prints the command syntax
         } else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0){
             printf("\nByteWipe: a secure file wiping tool. \n");
-            printf("Usage: bytewipe [options] <file_path> \n\n", argv[0]);
+            printf("Usage: bytewipe [options] <file_path> \n\n");
             printf("Options: \n");
             printf("  -p, --passes <num>     Number of overwrite passes (default: %d, max: %d) \n", MIN_PASSES, MAX_PASSES);
             printf("  -z, --zero             Overwrite with zeros instead of random data \n");

@@ -57,11 +57,21 @@ int wipeFile(const char *filepath, size_t buffer_size, int passes, WipeMode mode
         return ERR_INVALID_ARGS;
     }
 
-    if(info.is_readonly && !force){
-        fprintf(stderr, "Error: File is read-only. Use --force to attempt a permission change. \n");
-        return ERR_PERMISSION_DENIED;
+    if(info.is_readonly){
+        // If --force isn't passed throws an error
+        if(!force){
+            fprintf(stderr, "Error: File is read-only. Use --force to attempt a permission change. \n");
+            return ERR_PERMISSION_DENIED;
+        }
+        
+        // Attempts a permission change
+        if(makeFileWritable(filepath) != 0){
+            fprintf(stderr, "Error: Failed to change file permissions. \n");
+            return ERR_PERMISSION_DENIED;
+        }
     }
 
+    // If file has hardlink, by default the shredding is blocked. If --force is passed this block is bypassed
     if(info.hardlinks > 1 && !force){
         fprintf(stderr, "Error: File has %u hardlinks. Use --force to bypass this security block. \n", info.hardlinks);
         return ERR_INVALID_ARGS;
@@ -82,59 +92,63 @@ int wipeFile(const char *filepath, size_t buffer_size, int passes, WipeMode mode
         return ERR_WRITE_FAILED;
     }
 
-    // Passes cycle
-    for(int p=0; p < passes; p++){
+    // If file is empty no overwrite needed but obfuscation is still needed
+    if(total_bytes > 0){
 
-        // Repositions the cursor to the beginning of the file for the new pass
-        if(fseek(fp, 0, SEEK_SET) != 0){
-            free(buffer);
-            fclose(fp);
-            fprintf(stderr, "Error: Impossible to reset cursor position for next pass. \n");
-            return ERR_WRITE_FAILED;
-        }
+        // Passes cycle
+        for(int p=0; p < passes; p++){
 
-        long long remaining_bytes = total_bytes; // Used to track remaining bytes to write
-
-        // File overwrite cycle (i used do...while since at least one write has to be performed)
-        do{
-            // Calculate the correct amount of bytes to write, to avoid writing outside the file
-            size_t actual_bytes_to_write = (remaining_bytes < buffer_size) ? (size_t)remaining_bytes : buffer_size;
-
-            // For zero-mode wipe, memset() is used
-            if(mode == WIPE_MODE_ZERO){
-                memset(buffer, 0, actual_bytes_to_write);
-
-            // For random-mode wipe, custom random generation function is used
-            } else if (mode == WIPE_MODE_RANDOM){
-                if(generateRandomBytes(buffer, actual_bytes_to_write) != 0){
-                    free(buffer);
-                    fclose(fp);
-                    fprintf(stderr, "Error: An error has occurred while generating random bytes. \n");
-                    return ERR_WRITE_FAILED;
-                }
-            } else {
-                fprintf(stderr, "Error: Passed wipe mode isn't defined. \n");
-                return ERR_INVALID_ARGS;
-            }
-
-            // Actual disk write
-            if(fwrite(buffer, 1, actual_bytes_to_write, fp) != actual_bytes_to_write){
+            // Repositions the cursor to the beginning of the file for the new pass
+            if(fseek(fp, 0, SEEK_SET) != 0){
                 free(buffer);
                 fclose(fp);
-                fprintf(stderr, "Error: An error has occurred while writing the file. \n");
+                fprintf(stderr, "Error: Impossible to reset cursor position for next pass. \n");
                 return ERR_WRITE_FAILED;
-            }            
+            }
 
-            remaining_bytes -= actual_bytes_to_write; // Update remaining bytes to write    
+            long long remaining_bytes = total_bytes; // Used to track remaining bytes to write
 
-        }while(remaining_bytes > 0);
+            // File overwrite cycle (i used do...while since at least one write has to be performed)
+            do{
+                // Calculate the correct amount of bytes to write, to avoid writing outside the file
+                size_t actual_bytes_to_write = (remaining_bytes < buffer_size) ? (size_t)remaining_bytes : buffer_size;
 
-        // Forces the OS to write onto the disk
-        if(syncFileToDisk(fp) != 0) {            
-            free(buffer);
-            fclose(fp);
-            fprintf(stderr, "Error: Failed to synchronize data to physical disk. \n");
-            return ERR_WRITE_FAILED; 
+                // For zero-mode wipe, memset() is used
+                if(mode == WIPE_MODE_ZERO){
+                    memset(buffer, 0, actual_bytes_to_write);
+
+                // For random-mode wipe, custom random generation function is used
+                } else if (mode == WIPE_MODE_RANDOM){
+                    if(generateRandomBytes(buffer, actual_bytes_to_write) != 0){
+                        free(buffer);
+                        fclose(fp);
+                        fprintf(stderr, "Error: An error has occurred while generating random bytes. \n");
+                        return ERR_WRITE_FAILED;
+                    }
+                } else {
+                    fprintf(stderr, "Error: Passed wipe mode isn't defined. \n");
+                    return ERR_INVALID_ARGS;
+                }
+
+                // Actual disk write
+                if(fwrite(buffer, 1, actual_bytes_to_write, fp) != actual_bytes_to_write){
+                    free(buffer);
+                    fclose(fp);
+                    fprintf(stderr, "Error: An error has occurred while writing the file. \n");
+                    return ERR_WRITE_FAILED;
+                }            
+
+                remaining_bytes -= actual_bytes_to_write; // Update remaining bytes to write    
+
+            }while(remaining_bytes > 0);
+
+            // Forces the OS to write onto the disk
+            if(syncFileToDisk(fp) != 0) {            
+                free(buffer);
+                fclose(fp);
+                fprintf(stderr, "Error: Failed to synchronize data to physical disk. \n");
+                return ERR_WRITE_FAILED; 
+            }
         }
     }
     

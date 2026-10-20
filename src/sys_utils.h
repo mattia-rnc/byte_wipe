@@ -4,7 +4,7 @@
 #define SYS_UTILS_H
 
 /**
- * @brief Custom structure used to store file infos while being OS-independant
+ * @brief Custom structure used to store file infos while being OS-independant.
  */
 typedef struct {
     long long size;         // Used to store the size of the file in bytes
@@ -20,6 +20,14 @@ typedef struct {
  * @return int 0 on success, -1 on failure.
  */
 int getFileInfo(const char *filepath, FileInfo *info);
+
+/**
+ * @brief Grants write permissions to a read-only file.
+ * 
+ * @param filepath Path to the target file.
+ * @return int 0 on success, -1 on failure.
+ */
+int makeFileWritable(const char *filepath);
 
 /**
  * @brief Forces the OS to physically write file buffers to the disk.
