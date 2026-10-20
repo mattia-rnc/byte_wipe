@@ -134,5 +134,6 @@ int main(int argc, char *argv[]){
         return EXIT_FAILURE;
     }
 
-    wipeFile(target_file, buffer_size, passes, mode, force);
+    int res = wipeFile(target_file, buffer_size, passes, mode, force);
+    return (res == BYTEWIPE_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

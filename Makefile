@@ -4,7 +4,7 @@ CC = gcc
 # Compiler flags:
 # -Wall: enable standard warnings
 # -Wextra: enable additional warnings
-# -std=c99: use the C99 standard
+# -std=c99: use the C99 standard (for long long and variables declaration in for)
 # -O2: optimize for execution speed
 CFLAGS = -Wall -Wextra -std=c99 -O2
 
@@ -13,19 +13,20 @@ TARGET = bytewipe
 SRC_DIR = src
 
 # Source and object files
-SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/bytewipe.c $(SRC_DIR)/random_gen.c
+SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/bytewipe.c $(SRC_DIR)/random_gen.c $(SRC_DIR)/sys_utils.c
 OBJS = $(SRCS:.c=.o)
 
 # OS-specific settings:
 # LDLIBS: libraries to link (-lbcrypt needed for random generation on Windows)
-# CFLAGS: appended -D_FILE_OFFSET_BITS=64 needed to use stat() with big files on UNIX
+# CFLAGS: appended -D_FILE_OFFSET_BITS=64 needed to use stat() with big files on UNIX, and
+#	     -D_POSIX_C_SOURCE=200809L to re-enable POSIX funzitons disbaled by -std=c99
 # CLEAN_CMD: custom command for file removal
 ifeq ($(OS),Windows_NT)
 	LDLIBS = -lbcrypt
 	CLEAN_CMD = del /q /f src\*.o $(TARGET).exe
 else
 	LDLIBS = 
-	CFLAGS += -D_FILE_OFFSET_BITS=64
+	CFLAGS += -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809L
 	CLEAN_CMD = rm -f $(OBJS) $(TARGET)
 endif
 
