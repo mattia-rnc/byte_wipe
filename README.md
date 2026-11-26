@@ -1,21 +1,20 @@
 # ByteWipe
  
-ByteWipe is a cross-platform command-line utility written in **C** designed to securely delete files by overwriting their contents, thus preventing data recovery through forensic analysis.
+ByteWipe is a cross-platform command-line tool written in **C** that securely deletes files by overwriting their data, thus preventing data recovery through forensic analysis.
 
 
 ## Features
 
-- **Cryptographically Secure Random Generation**: utilizes native system entropy sources (`BCryptGenRandom` on Windows and `/dev/urandom` on UNIX systems) to generate unpredictable overwrite patterns
-- **Cross-Platform Metadata & Safety Checks**: safely inspects target files using abstraction wrappers (`_stat64` on Windows and `lstat` on UNIX systems) to validate regular files, check read-only status, and monitor hardlink counts
-- **Flexible Overwriting Modes**: supports multi-pass pseudo-random wiping (1 to 35 rounds) as well as an optional zero-fill mode (`-z`).
-- **Configurable Buffer Management**: allows custom buffer sizes for I/O operation optimization (ranging from 512 bytes to 10MB) with a dedicated `--legacy` flag shortcut for 512 bytes
-- **Safety Overrides**: includes a force flag (`-f`) to handle multiple hardlinks or attempt permission change when explicitly requested 
-
-- **Metadata Obfuscation**: destroys the file's temporal and structural footprint prior to deletion. Specifically, the tool truncates the file to 0 bytes, resets MAC (Modified, Accessed, Created) timestamps and renames the file
+- **Cryptographically Secure Random Generation**: uses entropy sources provided by the OS (`BCryptGenRandom` on Windows and `/dev/urandom` on UNIX systems) to generate random overwrite patterns
+- **Cross-Platform Metadata & Safety Checks**: inspects target files using abstraction wrappers (`_stat64` on Windows and `lstat` on UNIX systems) to ensure the file is a regular one, is not marked as read-only and keep track of the hardlink count
+- **Multiple Overwriting Modes**: enables multi-pass pseudo-random wiping (1 to 35 rounds) as well as a zero-fill mode (`-z`).
+- **Customizable Buffer Sizes**: enables users to set their own buffers sizes to optimize I/O operations (ranging from 512 bytes up to 10MB), as well as a special shortcut `--legacy` flag for 512 byte buffers
+- **Override Safety Checks**: includes a force flag (`-f`) to deal with multiple hardlinks or permission change attempts when required
+- **Metadata Obfuscation**: destroys the file's temporal and structural footprint before deletion. Specifically, the tool sets the file size to 0 bytes, resets MAC (Modified, Accessed, Created) timestamps and renames the file itself
 
 ### Feature Focus: Cryptographically Secure Random Generation
 
-Standard random number generators (like the C standard library's `rand()`) are highly predictable and insufficient for secure data sanitization. ByteWipe utilizes cryptographically secure pseudo-random number generators natively provided by the operating system to ensure maximum entropy during the overwriting process.
+Standard random number generators (such as the standard library function `rand()` in C) are highly predictable and cannot be used for proper data sanitization. ByteWipe utilizes cryptographically secure pseudo-random number generators natively provided by the operating system to achieve maximum entropy during the overwriting process.
 - **On Windows**: the tool uses the Cryptography Next Generation (CNG) API, specifically `BCryptGenRandom`, to generate secure byte sequences without relying on deprecated libraries
 - **On UNIX systems**: the tool reads directly from `/dev/urandom`, which serves as a high-quality entropy pool relying on environmental noise gathered by the kernel
 
@@ -24,16 +23,16 @@ Standard random number generators (like the C standard library's `rand()`) are h
 
 By default, ByteWipe respects system-level file protections. So, if a target file is marked as read-only, the tool will immediately abort the operation to prevent the accidental destruction of protected data.
 
-However, when the `--force` flag is provided, ByteWipe invokes a cross-platform abstraction to automatically grant the necessary write permissions before attempting the wipe:
-- **On Windows**: the tool utilizes the universal C runtime (`_chmod`) to alter the file attributes, actively removing the read-only flag while keeping other file properties intact.
-- **On UNIX systems**: the tool queries the current file permission mask using `lstat`. It then applies a bitwise OR operation with the `S_IWUSR` constant and uses `chmod`. This safely grants write access specifically to the file owner, without altering or breaking existing group or external user permissions.
+However, when the `--force` flag is provided, ByteWipe invokes a cross-platform abstraction to automatically change permissions before attempting the wipe:
+- **On Windows**: the tool utilizes the universal C runtime (`_chmod`) to alter the file attributes, removing the read-only flag while keeping other file properties intact
+- **On UNIX systems**: the tool checks the current file permission mask using `lstat`. It then applies a bitwise OR operation with the `S_IWUSR` constant and uses `chmod`. This safely grants write access specifically to the file owner, without altering or breaking existing group or external user permissions
 
 ### Feature Focus: Metadata Obfuscation
 
-Simply overwriting a file's content leaves behind structural and temporal footprints. Forensic analysts can use file sizes, original names, and MAC timestamps to reconstruct activity timelines. ByteWipe mitigates this through a three-step obfuscation pipeline executed right before the final unlinking:
-1. **Size Obfuscation (Truncation)**: the file is shrunk to 0 bytes, clearing the original size from filesystem records (like the NTFS Master File Table or ext4 inodes)
-2. **Timestomping**: the file's access and modification timestamps are forcefully reset to the UNIX Epoch (January 1, 1970), destroying the temporal context of the file's existence and destruction.
-3. **Filename Obfuscation**: the file is renamed using a cryptographically random string of the exact same length as the original name. This ensures the original filename is physically overwritten in the directory entry without leaving residual characters
+Simply overwriting a file's content leaves behind structural and temporal footprints. Forensic analysts can use file sizes, original names, and MAC timestamps to reconstruct activity timelines. ByteWipe mitigates this by implementing an obfuscation pipeline of three steps immediately prior to unlinking the file:
+1. **Size Obfuscation (Truncation)**: the file's size is reduced to 0 bytes, clearing the original size from the filesystem records (like the NTFS Master File Table or ext4 inodes)
+2. **Timestomping**: the access and modification time of the file are forcefully reset to the UNIX Epoch time(January 1, 1970), destroying the temporal information regarding the file's creation and destruction
+3. **Filename Obfuscation**: the file is renamed using a cryptographically random string of the same length as the original name. This ensures the original filename is overwritten in the directory entry without leaving  residual characters
 
 ## Project Structure
 
@@ -62,7 +61,7 @@ make clean
 
 This project was developed and tested using [MSYS2](https://www.msys2.org/) with the UCRT64 environment. To replicate this setup and compile the project on Windows:
 
-1. Install MSYS2 by following the official guide on the website
+1. Install MSYS2 following the official guide on the website
 
 2. Install the required GCC compiler and Make toolchain by running the following command in the UCRT64 terminal:
     ```bash
@@ -110,7 +109,7 @@ Use a legacy 512-byte buffer size with a 2-pass zero-fill:
 bytewipe -z -p 2 --legacy old_file.dat
 ```
 
-## Important Note SSDs 
+## Important Note About SSDs 
 
 Due to the inherent hardware architecture of modern Solid State Drives (SSDs), specifically features like **Wear Leveling**, **TRIM**, and **Over-provisioning**, software-based secure deletion is inherently less predictable than on traditional mechanical hard drives. 
 
@@ -120,14 +119,6 @@ Furthermore, performing multiple overwrite passes on an SSD provides **no** addi
 
 Therefore, when targeting files on an SSD, it is strongly advised to stick to the default **1 pass** to prevent premature drive wear.
 
-## Roadmap & Planned Features
-
-- **Graphical User Interface (GUI)**: develop a standalone application with a user-friendly graphical interface
-- **Directory Wiping**: implement secure deletion for entire folders
-- **Multiple Files Support**: allow batch processing to wipe multiple target files in a single command
-- **Enhanced CLI**: improve the command-line interface with better formatting, colors, and progress indicators
-- **Quiet Mode**: introduce a `--quiet` or `--silent` flag to suppress non-essential output, making the tool easier to integrate into automated scripts
-- **Advanced Security Hardening**: implement advanced TOCTOU (Time-of-Check to Time-of-Use) mitigations and further defensive programming strategies
 
 ## Possible Future Development
 

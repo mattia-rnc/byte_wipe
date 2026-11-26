@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/stat.h>
 
 #include "bytewipe.h"
 #include "random_gen.h"
@@ -25,25 +23,17 @@ static void generateRandomFilename(char *str, size_t size) {
     const char CHARSET[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     unsigned char rand_byte;
     
-    for(size_t i=0; i < size-1; i++){ // size-1 to terminate before string termination char
+    // Fill the buffer up to size - 1, to  terminate before string termination char
+    for(size_t i=0; i < size-1; i++){ 
         
-        generateRandomBytes(&rand_byte, 1); // Generate a random byte to pick a character from the charset
-        str[i] = CHARSET[rand_byte % (sizeof(CHARSET) - 1)]; // -1 due to string termination char
+        generateRandomBytes(&rand_byte, 1); 
+        str[i] = CHARSET[rand_byte % (sizeof(CHARSET) - 1)]; // Map the random byte to a valid index in CHARSET (excluding terminator)
     }
     str[size-1] = '\0';
 }
 
 
 int wipeFile(const char *filepath, size_t buffer_size, int passes, WipeMode mode, int force){
-
-    //PIPELINE:
-    // 1. Get exact file size using stat() ok
-    // 2. Open file in binary read/write mode ok 
-    // 3. Overwrite loop (single or multiple) ok
-    // 4. Metadata obfuscation 
-    // 5. File rename
-    // 6. File removal
-
 
     FileInfo info; // Custom structure for file infos
 
@@ -126,6 +116,8 @@ int wipeFile(const char *filepath, size_t buffer_size, int passes, WipeMode mode
                         return ERR_WRITE_FAILED;
                     }
                 } else {
+                    free(buffer);
+                    fclose(fp);
                     fprintf(stderr, "Error: Passed wipe mode isn't defined. \n");
                     return ERR_INVALID_ARGS;
                 }

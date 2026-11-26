@@ -6,6 +6,8 @@
  * @brief Header file for the bytewipe.
  */
 
+ #include <stddef.h>
+
 // Error codes returned by the wiping operations
 #define BYTEWIPE_SUCCESS         0
 #define ERR_INVALID_ARGS        -1
@@ -16,7 +18,7 @@
 #define ERR_RENAME_FAILED       -6
 #define ERR_REMOVE_FAILED       -7
 
-// Enum for suppported wipe modes
+// Enum for supported wipe modes
 typedef enum {
     WIPE_MODE_RANDOM,
     WIPE_MODE_ZERO
@@ -30,8 +32,10 @@ typedef enum {
  * unlinks the file.
  * 
  * @param filepath Path to the file to be securely wiped.
+ * @param buffer_size Write buffer size, to optimize for the specific I/O device
  * @param passes Number of random data overwrite passes to execute.
  * @param mode Overwrite mode: WIPE_MODE_RANDOM (default) or WIPE_MODE_ZERO
+ * @param force Used to bypass hardlink limits and attempt permission change
  * @return int BYTEWIPE_SUCCESS (0) on success, or a negative error code on failure.
  */
 int wipeFile(const char *filepath, size_t buffer_size, int passes, WipeMode mode, int force);

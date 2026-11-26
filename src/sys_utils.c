@@ -25,7 +25,7 @@ int getFileInfo(const char *filepath, FileInfo *info) {
 #else
     struct stat st;
 
-    // lstat to avoid recursin on symlinks
+    // lstat to avoid recursion on symlinks
     if(lstat(filepath, &st) == 0) {
         info->size = (long long)st.st_size;
         info->is_regular = S_ISREG(st.st_mode) ? 1 : 0;

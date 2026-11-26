@@ -19,7 +19,7 @@ OBJS = $(SRCS:.c=.o)
 # OS-specific settings:
 # LDLIBS: libraries to link (-lbcrypt needed for random generation on Windows)
 # CFLAGS: appended -D_FILE_OFFSET_BITS=64 needed to use stat() with big files on UNIX, and
-#	     -D_POSIX_C_SOURCE=200809L to re-enable POSIX funzitons disbaled by -std=c99
+#	     -D_POSIX_C_SOURCE=200809L to re-enable POSIX functions disabled by -std=c99
 # CLEAN_CMD: custom command for file removal
 ifeq ($(OS),Windows_NT)
 	LDLIBS = -lbcrypt
